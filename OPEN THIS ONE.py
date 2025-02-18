@@ -45,11 +45,16 @@ real_small_font = pygame.font.Font('assets/Terserah.ttf', 10)
 nati_font = pygame.font.Font('assets/ChrustyRock.ttf', 15)   #MA
 nati2_font = pygame.font.Font('assets/ChrustyRock.ttf', 13)  #MA
 nati3_font = pygame.font.Font('assets/Terserah.ttf', 15)     #MA
+
+
 fps = 60
 timer = pygame.time.Clock()
 WIDTH = 52 * 35
 HEIGHT = 400
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
+pygame.display.set_caption("Modified Python Piano - A Music Teaching Tool!")
+
+
 white_sounds = []
 black_sounds = []
 active_whites = []
@@ -110,7 +115,7 @@ def draw_piano(whites, blacks):
             #print('This is', len(blacks))
             if blacks[q][0] == i:
                 if blacks[q][1] > 0:
-                    pygame.draw.rect(screen, 'purple', [23 + (i * 35) + (skip_count * 35), HEIGHT - 300, 24, 200], 3, 2)
+                    pygame.draw.rect(screen, 'green', [23 + (i * 35) + (skip_count * 35), HEIGHT - 300, 24, 200], 3, 2)
                     blacks[q][1] -= 1
 
         key_label = real_small_font.render(black_labels[i], True, 'white')
@@ -229,10 +234,10 @@ def sample_text(): #A sample text I added that is activated by pressing a certai
 def minor_scale_mover(NOTEEE): #plays a minor scale #MA
     NOTE_KEY = {}
     index = piano_labels.index(NOTEEE)
-    NOTEEE = piano_labels[index-2]
+    NOTEEE = piano_labels[index]
     index -= 2
     scale_track = 0
-    scaler = 0 #crucial variable to keep determine if the next key should be a whole step away or a half step away
+    scaler = 0 #crucial variable to determine if the next key should be a whole step away or a half step away
                #this is how I set up the pattern to play a minor scale
     SCALE_DEGREE = 1
     #global active_blacks, active_whites
@@ -425,62 +430,49 @@ def chord_player (NOTEEE): #MA
         
     return scale_string
 
-def two_five_one(NOTEEE): #WORKS!!  #MA
-    
-    NOTE_KEY = {}
-    SCALE_DEGREE = 1
-    chord_track = 1
-    is_major = False 
-    is_minor = True
-    scaler = 0
-    index = piano_labels.index(NOTEEE)
-    play_index = index + 2
-    for increment in range(3):
-        if scaler == 1:
-            is_major = True
-            is_minor = False
-            play_index = index + 7
-        elif scaler == 2:
-            play_index = index
+# Define musical intervals as constants
+MINOR_THIRD = 3
+MAJOR_THIRD = 4
+PERFECT_FIFTH = 7
+MINOR_SEVENTH = 10
+MAJOR_SEVENTH = 11
 
-        if is_minor == True:
-            third = 3
-            fifth = 7
-            seventh = 10 
-            SCALE_DEGREE = 2
-        elif is_major == True and scaler == 1:
-            third = 4
-            fifth = 7
-            seventh = 10
-            SCALE_DEGREE = 5
-        elif is_major == True and scaler == 2:
-            third = 4
-            fifth = 7
-            seventh = 11
-            SCALE_DEGREE = 1
-        scaler += 1
-        NOTE_KEY[NOTEEE] = SCALE_DEGREE
-        piano_sounds[play_index].play()
-        piano_sounds[play_index+third].play()
-        piano_sounds[play_index+fifth].play()
-        piano_sounds[play_index+seventh].play()
+def two_five_one(root_note):  # ii-V-I progression
+    # Define chord positions relative to root
+    SUPERTONIC_OFFSET = 2  # ii chord
+    DOMINANT_OFFSET = 7    # V chord
+    TONIC_OFFSET = 0       # I chord
+    
+    progression = [
+        {
+            'offset': SUPERTONIC_OFFSET,
+            'quality': 'minor7',
+            'intervals': [0, MINOR_THIRD, PERFECT_FIFTH, MINOR_SEVENTH],
+            'scale_degree': 2
+        },
+        {
+            'offset': DOMINANT_OFFSET,
+            'quality': 'dominant7',
+            'intervals': [0, MAJOR_THIRD, PERFECT_FIFTH, MINOR_SEVENTH],
+            'scale_degree': 5
+        },
+        {
+            'offset': TONIC_OFFSET,
+            'quality': 'major7',
+            'intervals': [0, MAJOR_THIRD, PERFECT_FIFTH, MAJOR_SEVENTH],
+            'scale_degree': 1
+        }
+    ]
+    
+    root_index = piano_labels.index(root_note)
+    
+    for chord in progression:
+        base_index = root_index + chord['offset']
+        for interval in chord['intervals']:
+            piano_sounds[base_index + interval].play()
         time.sleep(delay)
-        print(NOTE_KEY)
-    
-    # Same format with function chord_player, maybe I could make this part into its own function to condense code...
-    global scale_string
-    scale_string = "The chords played along with their scale degrees: " 
-    for i in NOTE_KEY:
-        if (NOTE_KEY[i] == 2) and i[1] != '#':
-            scale_string += i[0] + 'MIN' + "--" + str(NOTE_KEY[i]) + ' '
-        elif (NOTE_KEY[i] == 1 or NOTE_KEY[i]==5) and i[1] != '#':
-            scale_string += i[0] + 'MAJ' + "--" + str(NOTE_KEY[i]) + ' '
-        elif (NOTE_KEY[i] == 2) and i[1] == '#':
-            scale_string += i[0] + i[1] + 'MIN' + "--" + str(NOTE_KEY[i]) + ' '
-        elif (NOTE_KEY[i] == 1 or NOTE_KEY[i]==5) and i[1] == '#':
-            scale_string += i[0] + i[1] + 'MAJ' + "--" + str(NOTE_KEY[i]) + ' '        
+        print({root_note: chord['scale_degree']})
 
-    
 
 #CHEKCING ACCURACY OF INDICES WITH THESE TWO PRINT STATEMENTS. ACCURATE INDICES CHECKED.
 #print(piano_sounds.index('C4.wav'))
@@ -528,7 +520,7 @@ while run:
 
 
 
-
+    # Allowing mouse clicking to play notes
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
@@ -567,21 +559,23 @@ while run:
                     white_sounds[index].play(0, 1000)
                     active_whites.append([index, 30])
 
+        # controlling delay between noteskz
+
         if event.type == pygame.TEXTINPUT and event.text.upper() == 'F':
             delay += 0.04405
 
         if event.type == pygame.TEXTINPUT and event.text.upper() == 'K' and delay - 0.00405 != 0:   
             delay -= 0.040405        
-        print(delay)
+        #print(delay)
         #SCALE MODE ACCOMPLISHED, scales play properly #MA
         if event.type == pygame.TEXTINPUT and pygame.key.get_pressed()[pygame.K_q]:
             if event.text.upper() in left_dict:
                 noteL = left_dict[event.text.upper()]
+
+                print(noteL)
                 sample_text()
                 minor_scale_mover(noteL)
-                
 
-                
                 
             if event.text.upper() in right_dict:
                 if event.text.upper() in right_dict:

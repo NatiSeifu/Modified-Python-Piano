@@ -1,0 +1,8 @@
+certifi==2024.8.30
+distlib==0.3.8
+filelock==3.16.0
+pipenv==2024.0.1
+platformdirs==4.3.2
+pygame==2.6.1
+setuptools==74.1.2
+virtualenv==20.26.4
